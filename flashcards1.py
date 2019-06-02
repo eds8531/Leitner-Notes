@@ -1,6 +1,7 @@
-import shelve
 import datetime
 from datetime import timedelta, datetime
+import random
+import shelve
 
 #  is a function for developers only and will not be in the finished program. It resets the shelf file where words are saved to a blank list.
 
