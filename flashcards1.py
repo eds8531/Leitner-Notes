@@ -1,7 +1,7 @@
-import datetime
-from datetime import timedelta, datetime
 import random
 import shelve
+import datetime
+from datetime import timedelta, datetime, date
 
 #  is a function for developers only and will not be in the finished program. It resets the shelf file where words are saved to a blank list.
 
@@ -20,10 +20,14 @@ def init():
 def six():
     shelfFile = shelve.open('fcdata')
     output = shelfFile['output']
-    print(output)
-    for i in output:
-        print(i)
-        
+    for card in output:
+        card[2] = card[2] + timedelta(days = -1)
+        print(card[2])
+    shelfFile['output'] = output
+    shelfFile.close()
+    main()
+
+
 # A method that adds words and definitions from 'Notes1.txt' to the shelfFile output list
 
 def update():
@@ -48,8 +52,8 @@ def update():
             card[0] = card[0][1:]
             card[1] = '-'.join(card[1:])
             card = card[:2]
-            print(card[1])
-            card.append(datetime.today())
+            print(card[0] + ' - ' + card[1])
+            card.append(date.today())
             card.append(1)
             card.append(0)
             # NEEDS TO BE REWRITTEN: NOW, IF THE PROGRAM SENSES A DUPLICATE, IT SKIPS, IT DOES NOT REPLACE.
@@ -63,65 +67,79 @@ def update():
     print(str(l) + ' new cards added.')
     main()
 
-# Prints a list of today's words and definitions. 
+# Prints a list of today's words and definitions.
 
 def print_list():
     shelfFile = shelve.open('fcdata')
     print("\n\n\nLIST OF TODAY'S WORDS\n\n\n")
     row = "{:15}: {:60}"
+    word_list_today = shelfFile['output']
+    random.shuffle(word_list_today)
     for card in shelfFile['output']:
-        print(row.format(card[0], card[1]))
+        if card[2] <= date.today():
+            print(row.format(card[0], card[1]))
     shelfFile.close()
     main()
 
 # Quizes user with that day's flashcards.
 def fc():
     word_list_today = []
+    word_list_future = []
     shelfFile = shelve.open('fcdata')
     word_list = shelfFile['output']
     for card in word_list:
         card[4] = 0
     for word in word_list:
-        if word[2] <= datetime.today():
+        if word[2] <= date.today():
             word_list_today.append(word)
-
+        else:
+            word_list_future.append(word)
+    random.shuffle(word_list_today)
+    print("There are " + str(len(word_list_today)) + " words in today's word list.")
 
     while len(word_list_today) > 0:
         print('\n\n' + word_list_today[0][0] + '\n\n')
         answer = input('Enter definition: ')
         print('\n\n' + word_list_today[0][1] + '\n\n')
-        card = word_list.pop(0)
+        card = word_list_today.pop(0)
         correct = input(' Did you get the question right or wrong or have you mastered the concept (type r, w, m or q)? ')
         if correct[0].lower() == 'r':
             if card[4] == 0:
                 card[4] += 1
                 card[3] += 1
-                card[2] = datetime.today() + timedelta(days = card[3])
-            word_list_today.append(card)
-
-        if correct[0].lower() == 'w':
-            if card[4] == 0:
-                card[4] += 1
-                card[3] = 1
-
-                card[2] = datetime.today() + timedelta(days = 1)
+                card[2] = date.today() + timedelta(days = card[3])
             word_list_today.append(card)
         if correct[0].lower() == 'm':
             if card[4] == 0:
                 card[4] +=1
                 card[3] +=1
-                card[2] = datetime.today() + timedelta(days = card[3])
-            word_list.append(card)
+                card[2] = date.today() + timedelta(days = card[3])
+            word_list_future.append(card)
+        if correct[0].lower() == 'f':
+            card[0], card[1] = card[1], card[0]
+            word_list_today.append(card)
+        if correct[0].lower() == 'w':
+            if card[4] == 0:
+                card[4] += 1
+                card[3] = 1
+
+                card[2] = date.today() + timedelta(days = 1)
+            word_list_today.append(card)
         if correct[0].lower() == 'q':
             break
+        #The following is for wrong answers. I used an 'else' statement as a filler to handle exceptions.
+
+
 
     for i in word_list_today:
-        word_list.append(i)
+        word_list_future.append(i)
+    tomorrows_words = 0
+    for i in word_list_future:
+        if card[2] <= date.today() +timedelta(days = 1):
+            tomorrows_words += 1
+    print("There are " + str(tomorrows_words) + " words in tomorrow's word list.") 
 
-    for i in word_list:
-        print(i[2])
-
-    shelfFile['output'] = word_list
+    shelfFile['output'] = word_list_future
     shelfFile.close()
     cont = input('\n\nList Completed: Type "y" to return to the main menu.')
     if cont == 'y':
@@ -155,3 +173,4 @@ def main():
         init()
 
 main()
+
